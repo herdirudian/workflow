@@ -92,9 +92,31 @@ export default async function ArticleEditPage({ params }: Props) {
             <div>
                 <span className="font-semibold">Created:</span> {article.createdAt.toLocaleString()}
             </div>
-            <div>
-                 <span className="font-semibold">Image:</span> {article.imageUrl ? 'Yes' : 'No'}
-            </div>
+        </div>
+
+        {/* Image Section */}
+        <div className="border p-4 rounded bg-gray-50">
+            <h3 className="font-bold text-sm mb-3 text-gray-700">Image Details</h3>
+            
+            {article.imageUrl ? (
+                <div className="space-y-3">
+                    <img 
+                        src={article.imageUrl} 
+                        alt="Article Image" 
+                        className="max-w-sm rounded border shadow-sm" 
+                    />
+                    <div className="text-xs text-gray-500 break-all">
+                        <span className="font-semibold">URL:</span> {article.imageUrl}
+                    </div>
+                    {(article as any).imagePrompt && (
+                        <div className="text-sm text-gray-600 italic border-l-2 border-blue-300 pl-3 py-1 bg-blue-50">
+                            "{(article as any).imagePrompt}"
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <p className="text-sm text-gray-500 italic">No image generated.</p>
+            )}
         </div>
 
         <div className="pt-4 border-t flex justify-end gap-4">

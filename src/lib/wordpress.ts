@@ -1,5 +1,7 @@
 
 import { prisma } from './prisma'
+import fs from 'fs'
+import path from 'path'
 
 // Configuration (Now using DB)
 interface WPPostData {
@@ -11,12 +13,35 @@ interface WPPostData {
 
 async function uploadImageToWP(imageUrl: string, title: string, apiUrl: string, user: string, pass: string): Promise<number | null> {
     try {
-        // Download image first
-        const imageRes = await fetch(imageUrl);
-        const blob = await imageRes.blob();
+        // Prepare image data
+        let blob: Blob;
+        let filename = 'image.jpg';
+
+        if (imageUrl.startsWith('http')) {
+            // Remote URL
+            const imageRes = await fetch(imageUrl);
+            if (!imageRes.ok) throw new Error(`Failed to fetch image: ${imageRes.statusText}`);
+            blob = await imageRes.blob();
+            // Try to get filename from URL
+            const urlParts = imageUrl.split('/');
+            const lastPart = urlParts[urlParts.length - 1];
+            if (lastPart && lastPart.includes('.')) filename = lastPart;
+        } else {
+            // Local file (e.g. /images/articles/foo.jpg)
+            const relativePath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
+            const localPath = path.join(process.cwd(), 'public', relativePath);
+            
+            if (!fs.existsSync(localPath)) {
+                console.error(`Local image not found: ${localPath}`);
+                return null;
+            }
+            const buffer = fs.readFileSync(localPath);
+            blob = new Blob([buffer]);
+            filename = path.basename(imageUrl);
+        }
         
         const formData = new FormData();
-        formData.append('file', blob, 'image.jpg');
+        formData.append('file', blob, filename);
         formData.append('title', title);
         
         const res = await fetch(`${apiUrl}/media`, {

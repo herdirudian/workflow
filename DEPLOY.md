@@ -3,8 +3,19 @@
 
 ## Prasyarat di VPS
 1.  **Docker & Docker Compose** sudah terinstall.
+    *(Jika belum, jalankan perintah ini)*:
+    ```bash
+    sudo apt update
+    sudo apt install docker.io docker-compose-v2 -y
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    ```
 2.  **Git** sudah terinstall.
+    ```bash
+    sudo apt install git -y
+    ```
 3.  **Nginx** (atau web server lain) sudah terinstall sebagai reverse proxy.
+
 
 ## 1. Instalasi di VPS (via GitHub)
 
@@ -32,7 +43,14 @@
     # DATABASE_URL sudah diset otomatis di docker-compose.yml ke file:/app/prisma/prod.db
     ```
 
-5.  **Jalankan Aplikasi**:
+3.  **Persiapkan File Database (PENTING)**:
+    Docker akan membuat folder, bukan file, jika file database belum ada. Lakukan ini untuk mencegah error:
+    ```bash
+    # Pastikan file database ada dan kosong
+    touch prisma/prod.db
+    ```
+
+4.  **Jalankan Aplikasi**:
     ```bash
     docker-compose up -d --build
     ```

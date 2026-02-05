@@ -31,6 +31,7 @@ model Article {
   content        String
   metaDesc       String
   imageUrl       String?
+  imagePrompt    String?
   sourceId       String
   sourceUrl      String          @unique
   category       String?         // Added for classification

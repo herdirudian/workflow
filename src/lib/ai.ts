@@ -16,6 +16,7 @@ export interface ProcessedArticle {
   category: string
   insight: string
   imageUrl?: string
+  imagePrompt?: string
 }
 
 const DEFAULT_PROMPT_TEMPLATE = `
@@ -172,7 +173,8 @@ export async function processArticleWithAI(originalContent: string, originalTitl
 
     return {
       ...data,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      imagePrompt: data.imagePrompt
     } as ProcessedArticle;
   } catch (error: any) {
     console.error("AI Error:", error.message || error);

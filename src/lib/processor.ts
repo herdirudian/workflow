@@ -60,6 +60,7 @@ export async function runPipeline() {
               content: processed.content,
               metaDesc: processed.metaDesc,
               imageUrl: processed.imageUrl,
+              imagePrompt: processed.imagePrompt,
               sourceId: source.id,
               sourceUrl: item.link,
               category: processed.category || source.category || "General",
