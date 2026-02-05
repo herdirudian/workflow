@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose'
 
 const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'default_secret_key')
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value
 
   const isLoginPage = request.nextUrl.pathname === '/login'
