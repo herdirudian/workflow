@@ -160,7 +160,7 @@ export async function processArticleWithAI(originalContent: string, originalTitl
     let data;
     try {
         data = JSON.parse(jsonString);
-    } catch (parseError) {
+    } catch (parseError: any) {
         console.error("JSON Parse Error. Raw Text:", text);
         throw new Error(`Failed to parse AI response: ${parseError.message}`);
     }
