@@ -44,7 +44,7 @@ Buat file konfigurasi Nginx baru:
 sudo nano /etc/nginx/sites-available/workflow.solusidigitalcreative.com
 ```
 
-Paste konfigurasi berikut:
+Paste konfigurasi berikut (pastikan hanya menyalin isi di dalam blok kode, jangan sertakan ```nginx):
 
 ```nginx
 server {
