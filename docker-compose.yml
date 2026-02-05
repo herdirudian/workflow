@@ -1,0 +1,27 @@
+
+version: '3'
+
+services:
+  app:
+    container_name: workflow_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3010:3000"
+    environment:
+      - DATABASE_URL=file:/app/prisma/prod.db
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - CRON_SECRET=${CRON_SECRET}
+    volumes:
+      # Persist SQLite Database
+      - ./prisma/prod.db:/app/prisma/prod.db
+      # Persist Uploaded/Downloaded Images
+      - ./public/images:/app/public/images
+    command: >
+      sh -c "npx prisma migrate deploy && node server.js"
+
+  # Optional: Nginx Proxy Manager or simple Nginx container if you don't have one on VPS
+  # For now, assuming you use host's Nginx or Cloudflare Tunnel

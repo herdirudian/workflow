@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Source {
+  id          String    @id @default(uuid())
+  name        String
+  rssUrl      String    @unique
+  category    String?
+  isActive    Boolean   @default(true)
+  hourlyLimit Int       @default(1)
+  dailyLimit  Int       @default(15)
+  lastFetchAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  articles    Article[]
+}
+
+model Article {
+  id             String          @id @default(uuid())
+  title          String
+  slug           String          @unique
+  content        String
+  metaDesc       String
+  imageUrl       String?
+  sourceId       String
+  sourceUrl      String          @unique
+  category       String?         // Added for classification
+  qualityScore   Int
+  status         String          @default("DRAFT") // DRAFT, PUBLISHED, REJECTED
+  publishedAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  source         Source          @relation(fields: [sourceId], references: [id])
+  processingLogs ProcessingLog[]
+  
+  // External Publishing
+  isPostedExternally Boolean @default(false)
+  externalPostId     String?
+  externalPlatform   String?
+  postedAt           DateTime?
+}
+
+model ExternalAccount {
+  id        String   @id @default(uuid())
+  name      String   // e.g. "My Main Blog"
+  platform  String   @default("WORDPRESS")
+  apiUrl    String   // e.g. "https://site.com/wp-json/wp/v2"
+  username  String
+  password  String   // Application Password
+  category  String?  // If set, only posts articles matching this category (exact match)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique // e.g., "ai_prompt_template"
+  value     String   // The actual prompt text
+  description String?
+  updatedAt DateTime @updatedAt
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  level     String   @default("INFO") // INFO, WARN, ERROR
+  message   String
+  metadata  String?  // JSON details
+  createdAt DateTime @default(now())
+}
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String   // Hashed password
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProcessingLog {
+  id           String   @id @default(uuid())
+  articleId    String
+  step         String
+  status       String
+  errorMessage String?
+  metadata     String? // Serialized JSON
+  createdAt    DateTime @default(now())
+  article      Article  @relation(fields: [articleId], references: [id])
+}
