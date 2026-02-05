@@ -6,36 +6,20 @@
 2.  **Git** sudah terinstall.
 3.  **Nginx** (atau web server lain) sudah terinstall sebagai reverse proxy.
 
-## 1. Instalasi di VPS (via SCP)
+## 1. Instalasi di VPS (via GitHub)
 
-1.  **Persiapkan File Lokal**:
-    Di komputer Windows Anda, jalankan script PowerShell berikut (gunakan `-ExecutionPolicy Bypass` jika script dilarang):
-    ```powershell
-    powershell -ExecutionPolicy Bypass -File .\prepare-deploy.ps1
-    ```
-    Script ini akan membuat file `deploy.zip` di root folder project Anda.
-
-2.  **Upload ke VPS**:
-    Gunakan SCP untuk mengupload file zip ke server. Ganti `user` dan `ip-vps-anda` dengan detail yang sesuai.
-    ```powershell
-    scp deploy.zip user@ip-vps-anda:/tmp/deploy.zip
-    ```
-
-3.  **Setup Direktori di VPS**:
-    SSH ke VPS Anda dan jalankan perintah berikut:
+1.  **Clone Repository**:
+    Masuk ke VPS Anda dan clone repository dari GitHub:
     ```bash
-    # Buat direktori aplikasi
-    sudo mkdir -p /var/www/workflow
-    sudo chown -R $USER:$USER /var/www/workflow
+    # Buat direktori (opsional, bisa langsung clone)
+    cd /var/www
     
-    # Pindahkan dan ekstrak file
-    mv /tmp/deploy.zip /var/www/workflow/
-    cd /var/www/workflow
-    unzip -o deploy.zip
-    rm deploy.zip
+    # Clone repo
+    git clone https://github.com/herdirudian/workflow.git
+    cd workflow
     ```
 
-4.  **Buat File Environment (.env)**:
+2.  **Buat File Environment (.env)**:
     Buat file `.env` di dalam direktori aplikasi:
     ```bash
     nano .env
@@ -99,14 +83,12 @@ sudo certbot --nginx -d workflow.solusidigitalcreative.com
 
 ## 4. Pemeliharaan (Maintenance)
 
-- **Update Aplikasi (via SCP)**:
-    1.  Lakukan perubahan kode di komputer lokal, lalu jalankan `.\prepare-deploy.ps1`.
-    2.  Upload ulang file zip: `scp deploy.zip user@ip-vps-anda:/var/www/workflow/deploy.zip`.
-    3.  Di VPS, jalankan:
+- **Update Aplikasi (via GitHub)**:
+    1.  Lakukan perubahan kode di komputer lokal, commit, dan push ke GitHub.
+    2.  Di VPS, jalankan:
         ```bash
         cd /var/www/workflow
-        unzip -o deploy.zip
-        rm deploy.zip
+        git pull origin master
         docker-compose up -d --build
         ```
 - **Lihat Logs**:
