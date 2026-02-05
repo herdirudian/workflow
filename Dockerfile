@@ -36,7 +36,8 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN apt-get update && apt-get install -y openssl
 
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 --home /home/nextjs --create-home nextjs
+RUN adduser --system --uid 1001 --home /home/nextjs nextjs
+RUN mkdir -p /home/nextjs && chown nextjs:nodejs /home/nextjs
 
 ENV HOME=/home/nextjs
 
