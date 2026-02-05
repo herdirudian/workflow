@@ -1,6 +1,4 @@
 
-version: '3'
-
 services:
   app:
     container_name: workflow_app
@@ -21,7 +19,7 @@ services:
       # Persist Uploaded/Downloaded Images
       - ./public/images:/app/public/images
     command: >
-      sh -c "npx prisma migrate deploy && node server.js"
+      sh -c "npx prisma@5.22.0 migrate deploy && node server.js"
 
   # Optional: Nginx Proxy Manager or simple Nginx container if you don't have one on VPS
   # For now, assuming you use host's Nginx or Cloudflare Tunnel
