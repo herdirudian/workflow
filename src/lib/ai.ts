@@ -68,9 +68,10 @@ async function downloadImage(url: string, filename: string): Promise<string | nu
     const filepath = path.join(dir, filename);
     fs.writeFileSync(filepath, buffer);
     
+    console.log(`[Image] Successfully saved to: ${filepath}`);
     return `/images/articles/${filename}`;
-  } catch (error) {
-    console.error("Image Download Error:", error);
+  } catch (error: any) {
+    console.error(`[Image] Download Error for ${url}:`, error.message);
     return null;
   }
 }
@@ -81,10 +82,11 @@ async function generateImage(prompt: string, slug: string): Promise<string | nul
     const encodedPrompt = encodeURIComponent(prompt);
     const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}`;
     
+    console.log(`[Image] Generating from: ${imageUrl}`);
     const filename = `${slug}-${Date.now()}.jpg`;
     return await downloadImage(imageUrl, filename);
-  } catch (error) {
-    console.error("Image Generation Error:", error);
+  } catch (error: any) {
+    console.error("[Image] Generation Error:", error.message);
     return null;
   }
 }
