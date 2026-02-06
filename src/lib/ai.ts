@@ -115,43 +115,54 @@ export async function processArticleWithAI(originalContent: string, originalTitl
   }
 
   try {
-    // Use gemini-1.5-flash for better stability and speed (Tier 1 model)
-    const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
-
     // Fetch dynamic prompt
     const promptSetting = await prisma.systemSetting.findUnique({
         where: { key: 'ai_prompt_template' }
     });
 
     const template = promptSetting?.value || DEFAULT_PROMPT_TEMPLATE;
-
     const prompt = template
         .replace(/\${originalTitle}/g, originalTitle)
         .replace(/\${originalContent}/g, originalContent.substring(0, 5000));
 
-    // Retry logic for 429
+    // Model Fallback Logic
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-pro"];
     let result;
-    let attempts = 0;
-    const maxAttempts = 3;
-    
-    while (attempts < maxAttempts) {
+    let lastError;
+
+    for (const modelName of modelsToTry) {
         try {
-            result = await model.generateContent(prompt);
-            break;
-        } catch (e: any) {
-            if (e.message && (e.message.includes("429") || e.status === 429)) {
-                attempts++;
-                console.log(`Quota exceeded (429). Retrying in ${attempts * 2}s...`);
-                await new Promise(resolve => setTimeout(resolve, attempts * 2000));
-                // Rotate key again on failure
-                currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-            } else {
-                throw e;
+            const model = getGenAI().getGenerativeModel({ model: modelName });
+            
+            // Retry logic for 429 (Quota)
+            let attempts = 0;
+            const maxAttempts = 3;
+            while (attempts < maxAttempts) {
+                try {
+                    result = await model.generateContent(prompt);
+                    break; // Success
+                } catch (e: any) {
+                    if (e.message && (e.message.includes("429") || e.status === 429)) {
+                        attempts++;
+                        console.log(`[${modelName}] Quota exceeded (429). Retrying in ${attempts * 2}s...`);
+                        await new Promise(resolve => setTimeout(resolve, attempts * 2000));
+                        currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+                    } else {
+                        throw e; // Throw to model loop
+                    }
+                }
             }
+            
+            if (result) break; // Success
+
+        } catch (e: any) {
+            console.warn(`Model ${modelName} failed: ${e.message}`);
+            lastError = e;
+            // Continue to next model
         }
     }
-    
-    if (!result) throw new Error("Failed to generate content after retries");
+
+    if (!result) throw lastError || new Error("All models failed");
 
     const response = await result.response;
     const text = response.text();
