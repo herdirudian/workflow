@@ -4,8 +4,16 @@ import path from 'path'
 import { prisma } from './prisma'
 import { logSystem } from './logger'
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || 'dummy')
+// Initialize Gemini with key rotation
+const API_KEYS = (process.env.GOOGLE_API_KEY || 'dummy').split(',');
+let currentKeyIndex = 0;
+
+function getGenAI() {
+  const key = API_KEYS[currentKeyIndex];
+  currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+  // console.log(`Using API Key index: ${currentKeyIndex} (ending in ...${key.slice(-4)})`);
+  return new GoogleGenerativeAI(key);
+}
 
 export interface ProcessedArticle {
   title: string
@@ -107,8 +115,8 @@ export async function processArticleWithAI(originalContent: string, originalTitl
   }
 
   try {
-    // Use gemini-2.0-flash-lite-001 for better efficiency/quota management
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-001" });
+    // Use gemini-1.5-flash for better stability and speed (Tier 1 model)
+    const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Fetch dynamic prompt
     const promptSetting = await prisma.systemSetting.findUnique({
@@ -119,7 +127,7 @@ export async function processArticleWithAI(originalContent: string, originalTitl
 
     const prompt = template
         .replace(/\${originalTitle}/g, originalTitle)
-        .replace(/\${originalContent}/g, originalContent);
+        .replace(/\${originalContent}/g, originalContent.substring(0, 5000));
 
     // Retry logic for 429
     let result;
@@ -131,10 +139,12 @@ export async function processArticleWithAI(originalContent: string, originalTitl
             result = await model.generateContent(prompt);
             break;
         } catch (e: any) {
-            if (e.message && e.message.includes("429")) {
+            if (e.message && (e.message.includes("429") || e.status === 429)) {
                 attempts++;
                 console.log(`Quota exceeded (429). Retrying in ${attempts * 2}s...`);
                 await new Promise(resolve => setTimeout(resolve, attempts * 2000));
+                // Rotate key again on failure
+                currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
             } else {
                 throw e;
             }
@@ -193,10 +203,10 @@ export async function processArticleWithAI(originalContent: string, originalTitl
       title: originalTitle,
       content: originalContent,
       slug: `error-${Date.now()}`,
-      metaDesc: "Error processing (AI Failed)",
+      metaDesc: `Error processing (AI Failed): ${error.message || 'Unknown error'}`,
       category: "General",
       qualityScore: 0,
-      insight: "Error: AI processing failed. Check logs.",
+      insight: `Error: AI processing failed. Details: ${error.message}`,
       imageUrl: undefined
     }
   }
