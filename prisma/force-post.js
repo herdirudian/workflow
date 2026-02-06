@@ -9,15 +9,28 @@ const path = require('path');
 async function forcePost() {
     console.log("=== Force Post Diagnostic ===");
 
-    // 1. Get Candidate
-    const candidate = await prisma.article.findFirst({
+    // 1. Get Candidate (Prioritize Image for Diagnostic)
+    let candidate = await prisma.article.findFirst({
         where: {
             status: 'PUBLISHED',
             isPostedExternally: false,
-            qualityScore: { gte: 80 }
+            qualityScore: { gte: 80 },
+            imageUrl: { not: null } // Try to find one WITH image first
         },
         orderBy: { qualityScore: 'desc' }
     });
+
+    // Fallback to any article if no image one found
+    if (!candidate) {
+         candidate = await prisma.article.findFirst({
+            where: {
+                status: 'PUBLISHED',
+                isPostedExternally: false,
+                qualityScore: { gte: 80 }
+            },
+            orderBy: { qualityScore: 'desc' }
+        });
+    }
 
     if (!candidate) {
         console.log("No candidates found to post.");
