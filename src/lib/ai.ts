@@ -125,8 +125,13 @@ export async function processArticleWithAI(originalContent: string, originalTitl
         .replace(/\${originalTitle}/g, originalTitle)
         .replace(/\${originalContent}/g, originalContent.substring(0, 5000));
 
-    // Model Fallback Logic
-    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.0-pro", "gemini-pro"];
+    // Model Fallback Logic based on user's available models
+    const modelsToTry = [
+        "gemini-2.0-flash",           // Primary choice (Fast & Capable)
+        "gemini-2.0-flash-lite",      // Secondary choice (Lighter)
+        "gemini-1.5-flash",           // Fallback
+        "gemini-pro"                  // Ultimate fallback
+    ];
     let result;
     let lastError;
 
