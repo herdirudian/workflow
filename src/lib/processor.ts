@@ -3,6 +3,12 @@ import { fetchRSS } from './rss'
 import { processArticleWithAI } from './ai'
 import { logSystem } from './logger'
 
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+const RATE_DELAY_MS = parseInt(process.env.AI_RATE_DELAY_MS || '10000', 10)
+
 export async function runPipeline() {
   await logSystem('INFO', 'Pipeline started')
   const sources = await prisma.source.findMany({ where: { isActive: true } })
@@ -43,7 +49,17 @@ export async function runPipeline() {
       try {
           // Process
           const contentToProcess = item.content || item.contentSnippet || item.summary || ""
+          // Rate limit AI calls to avoid 429
+          if (RATE_DELAY_MS > 0) {
+            await sleep(RATE_DELAY_MS)
+          }
           const processed = await processArticleWithAI(contentToProcess, item.title || "Untitled")
+
+          // Skip saving if AI failed (qualityScore <= 0)
+          if (!processed || processed.qualityScore <= 0) {
+            await logSystem('WARN', `AI failed or returned low score for: ${item.title}`)
+            continue
+          }
 
           // Save
           const status = processed.qualityScore >= 75 ? 'PUBLISHED' : (processed.qualityScore >= 60 ? 'DRAFT' : 'REJECTED')
