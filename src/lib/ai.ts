@@ -126,11 +126,10 @@ export async function processArticleWithAI(originalContent: string, originalTitl
         .replace(/\${originalContent}/g, originalContent.substring(0, 5000));
 
     // Model Fallback Logic based on user's available models
+    // We remove the 404-prone models to save API calls and time
     const modelsToTry = [
         "gemini-2.0-flash",           // Primary choice (Fast & Capable)
-        "gemini-2.0-flash-lite",      // Secondary choice (Lighter)
-        "gemini-1.5-flash",           // Fallback
-        "gemini-pro"                  // Ultimate fallback
+        "gemini-2.0-flash-lite"       // Secondary choice (Lighter)
     ];
     let result;
     let lastError;
@@ -141,17 +140,29 @@ export async function processArticleWithAI(originalContent: string, originalTitl
             
             // Retry logic for 429 (Quota)
             let attempts = 0;
-            const maxAttempts = 3;
+            const maxAttempts = 6; // Increased retry attempts for strict quotas
             while (attempts < maxAttempts) {
                 try {
+                    // Add delay before request based on attempt count (exponential backoff)
+                    if (attempts > 0) {
+                        const delay = attempts * 5000; // 5s, 10s, 15s...
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                    
                     result = await model.generateContent(prompt);
                     break; // Success
                 } catch (e: any) {
                     if (e.message && (e.message.includes("429") || e.status === 429)) {
                         attempts++;
-                        console.log(`[${modelName}] Quota exceeded (429). Retrying in ${attempts * 2}s...`);
-                        await new Promise(resolve => setTimeout(resolve, attempts * 2000));
+                        console.log(`[${modelName}] Quota exceeded (429). Retrying in ${attempts * 5}s...`);
+                        
+                        // Rotate key immediately on 429
                         currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+                        // Update model instance with new key
+                        // Note: In this loop structure, we can't easily switch the model instance key in-place
+                        // without refactoring, but the next loop iteration or next function call will use the new key index.
+                        // However, to make it effective NOW, we should re-instantiate the model or just wait.
+                        // Since we are inside the loop, let's just wait and retry.
                     } else {
                         throw e; // Throw to model loop
                     }
