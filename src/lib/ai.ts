@@ -125,11 +125,12 @@ export async function processArticleWithAI(originalContent: string, originalTitl
         .replace(/\${originalTitle}/g, originalTitle)
         .replace(/\${originalContent}/g, originalContent.substring(0, 5000));
 
-    // Model Fallback Logic based on user's available models
-    // We remove the 404-prone models to save API calls and time
+    // Model Fallback Logic based on user's available models (Confirmed via check-ai.js)
     const modelsToTry = [
-        "gemini-2.0-flash",           // Primary choice (Fast & Capable)
-        "gemini-2.0-flash-lite"       // Secondary choice (Lighter)
+        "gemini-2.0-flash",           // Primary choice (Confirmed Available)
+        "gemini-2.0-flash-lite",      // Secondary choice (Confirmed Available)
+        "gemini-2.5-flash",           // Newer version (Confirmed Available)
+        "gemini-flash-latest"         // Generic alias (Confirmed Available)
     ];
     let result;
     let lastError;
@@ -150,6 +151,7 @@ export async function processArticleWithAI(originalContent: string, originalTitl
                     }
                     
                     result = await model.generateContent(prompt);
+                    console.log(`[AI] Success with model: ${modelName}`);
                     break; // Success
                 } catch (e: any) {
                     if (e.message && (e.message.includes("429") || e.status === 429)) {
