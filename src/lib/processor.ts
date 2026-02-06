@@ -14,6 +14,8 @@ export async function runPipeline() {
   }
 
   for (const source of sources) {
+    if (source.rssUrl.startsWith('manual://')) continue;
+
     // console.log(`Fetching source: ${source.name}`)
     
     const items = await fetchRSS(source.rssUrl)
