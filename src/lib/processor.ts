@@ -57,7 +57,8 @@ export async function runPipeline() {
 
           // Skip saving if AI failed (qualityScore <= 0)
           if (!processed || processed.qualityScore <= 0) {
-            await logSystem('WARN', `AI failed or returned low score for: ${item.title}`)
+            const failureReason = processed?.insight || 'Unknown error';
+            await logSystem('WARN', `AI failed for: ${item.title}`, { reason: failureReason })
             continue
           }
 
