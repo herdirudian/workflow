@@ -4,23 +4,47 @@ import { runScheduledPosting } from '@/lib/wordpress';
 
 export const dynamic = 'force-dynamic';
 
+// Simple in-memory lock to prevent concurrent execution
+let isProcessing = false;
+
 export async function GET(request: Request) {
+  if (isProcessing) {
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Cron job is already running in the background.' 
+    }, { status: 429 });
+  }
+
   try {
     console.log("Cron triggered...");
+    isProcessing = true;
     
-    // 1. Run Fetch & Process Pipeline
-    const results = await runPipeline();
-    
-    // 2. Run Auto-Posting to WordPress
-    try {
-        await runScheduledPosting();
-    } catch (wpError) {
-        console.error("WP Posting Error in Cron:", wpError);
-    }
+    // Run in background (Fire and Forget)
+    // We do NOT await this promise in the response flow
+    (async () => {
+        try {
+            console.log("Starting background pipeline...");
+            const results = await runPipeline();
+            console.log(`Background pipeline finished. Processed: ${results.length}`);
+            
+            await runScheduledPosting();
+            console.log("Background scheduled posting finished.");
+        } catch (err) {
+            console.error("Background Cron Error:", err);
+        } finally {
+            isProcessing = false;
+        }
+    })();
 
-    return NextResponse.json({ success: true, processed: results.length, articles: results });
+    // Return immediate response to prevent 504 Gateway Time-out
+    return NextResponse.json({ 
+        success: true, 
+        message: 'Cron job started in background. Check server logs for progress.' 
+    }, { status: 202 });
+
   } catch (error) {
-    console.error("Cron Error:", error);
+    isProcessing = false;
+    console.error("Cron Launch Error:", error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
