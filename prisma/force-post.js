@@ -40,6 +40,30 @@ async function forcePost() {
     console.log(`Target Account: ${targetAccount.name} (${targetAccount.apiUrl})`);
     console.log(`Username: ${targetAccount.username}`);
 
+    const auth = Buffer.from(`${targetAccount.username}:${targetAccount.password}`).toString('base64');
+
+    // --- DIAGNOSTIC: Check User Capabilities ---
+    try {
+        console.log("Checking User Permissions...");
+        const userRes = await fetch(`${targetAccount.apiUrl}/users/me?context=edit`, {
+            headers: { 'Authorization': 'Basic ' + auth }
+        });
+        
+        if (userRes.ok) {
+            const userData = await userRes.json();
+            console.log(`Authenticated as: ${userData.name} (ID: ${userData.id})`);
+            console.log(`Roles: ${JSON.stringify(userData.roles)}`);
+            console.log(`Capabilities: ${JSON.stringify(userData.capabilities)}`);
+        } else {
+            console.log(`User Check Failed: ${userRes.status} ${userRes.statusText}`);
+            const errText = await userRes.text();
+            console.log(`Error Body: ${errText}`);
+        }
+    } catch (err) {
+        console.log("Error checking user:", err.message);
+    }
+    // -------------------------------------------
+
     // 3. Try Image Upload First (if needed)
     let featuredMediaId = undefined;
     if (candidate.imageUrl) {
