@@ -39,6 +39,14 @@ async function forcePost() {
 
     console.log(`Target Account: ${targetAccount.name} (${targetAccount.apiUrl})`);
     console.log(`Username: ${targetAccount.username}`);
+    
+    // Check Password Format
+    const isAppPassword = targetAccount.password.includes(' ') || targetAccount.password.length === 24; // App passwords are usually 4 blocks of 4 chars
+    console.log(`Password Type Check: ${isAppPassword ? "Looks like App Password (OK)" : "WARNING: Looks like Login Password (FAIL)"}`);
+    if (!isAppPassword) {
+        console.log("--> Please ensure you are using an 'Application Password' generated in WP Admin > Users > Profile.");
+        console.log("--> Do NOT use your regular login password.");
+    }
 
     const auth = Buffer.from(`${targetAccount.username}:${targetAccount.password}`).toString('base64');
 
