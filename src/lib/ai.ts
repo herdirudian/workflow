@@ -126,7 +126,7 @@ export async function processArticleWithAI(originalContent: string, originalTitl
         .replace(/\${originalContent}/g, originalContent.substring(0, 5000));
 
     // Model Fallback Logic
-    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-pro"];
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.0-pro", "gemini-pro"];
     let result;
     let lastError;
 
